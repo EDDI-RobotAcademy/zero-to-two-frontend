@@ -9,7 +9,7 @@ import { Button } from '@/components/common/Button';
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { login } = useRole();
+  const { login, redirectToGoogle } = useRole();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const roleParam = searchParams.get('role');
@@ -27,8 +27,25 @@ export default function LoginPage() {
       router.push('/auth/role-select');
       return;
     }
+    if (typeof window !== 'undefined' && email) {
+      window.localStorage.setItem('userName', email.split('@')[0] || email);
+    }
     login(roleParam);
     router.push(nextPath);
+  };
+
+  const handleGoogleLogin = () => {
+    if (roleParam !== 'tenant' && roleParam !== 'landlord') {
+      router.push('/auth/role-select');
+      return;
+    }
+    if (typeof window !== 'undefined' && email) {
+      window.localStorage.setItem('userName', email.split('@')[0] || email);
+    } else if (typeof window !== 'undefined') {
+      window.localStorage.removeItem('userName');
+    }
+    // 역할을 미리 저장해 두고 백엔드 OAuth 엔드포인트로 이동
+    redirectToGoogle(roleParam);
   };
 
   return (
@@ -84,6 +101,7 @@ export default function LoginPage() {
           <button
             type="button"
             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium hover:bg-gray-50"
+            onClick={handleGoogleLogin}
           >
             Google로 계속하기
           </button>
