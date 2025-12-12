@@ -9,10 +9,10 @@
 # next.js
 /.next/
 /out/
-
+.idea/
 # production
 /build
-
+zero-to-two-frontend.iml
 # misc
 .DS_Store
 *.pem
