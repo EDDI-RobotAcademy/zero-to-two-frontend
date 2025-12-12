@@ -1,60 +1,61 @@
 "use client";
 
-import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useMemo, useSyncExternalStore } from 'react';
+import { userStore, UserRole as StoreUserRole } from './userStore';
+import { authFetch as baseAuthFetch } from './authClient';
 
-export type UserRole = 'tenant' | 'landlord' | null;
+export type UserRole = StoreUserRole;
 
 interface RoleContextValue {
   role: UserRole;
+  accessToken: string | null;
   isAuthenticated: boolean;
   isReady: boolean;
+  isRefreshing: boolean;
   login: (role: Exclude<UserRole, null>) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
+  refreshAccessToken: () => Promise<string | null>;
+  redirectToGoogle: (role: Exclude<UserRole, null>) => void;
+  authFetch: typeof authFetch;
 }
 
 const RoleContext = createContext<RoleContextValue>({
   role: null,
+  accessToken: null,
   isAuthenticated: false,
   isReady: false,
+  isRefreshing: false,
   login: () => {},
-  logout: () => {},
+  logout: async () => {},
+  refreshAccessToken: async () => null,
+  redirectToGoogle: () => {},
+  authFetch: baseAuthFetch,
 });
 
 export function RoleProvider({ children }: { children: ReactNode }) {
-  const [role, setRole] = useState<UserRole>(null);
-  const [isReady, setReady] = useState(false);
+  const snapshot = useSyncExternalStore(userStore.subscribe, userStore.getState, userStore.getState);
 
+  // 초기화: 클라이언트에서만 호출 (렌더링 중 setState 방지)
   useEffect(() => {
-    const stored = typeof window !== 'undefined' ? window.localStorage.getItem('role') : null;
-    if (stored === 'tenant' || stored === 'landlord') {
-      setRole(stored);
-    }
-    setReady(true);
-  }, []);
-
-  const login = (nextRole: Exclude<UserRole, null>) => {
-    setRole(nextRole);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem('role', nextRole);
-    }
-  };
-
-  const logout = () => {
-    setRole(null);
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('role');
-    }
-  };
+    if (typeof window === 'undefined') return;
+    if (snapshot.isReady || snapshot.isRefreshing) return;
+    void userStore.init();
+  }, [snapshot.isReady, snapshot.isRefreshing]);
 
   const value = useMemo(
     () => ({
-      role,
-      isAuthenticated: role !== null,
-      isReady,
-      login,
-      logout,
+      role: snapshot.role,
+      accessToken: snapshot.accessToken,
+      isAuthenticated: snapshot.isAuthenticated,
+      isReady: snapshot.isReady,
+      isRefreshing: snapshot.isRefreshing,
+      login: userStore.login,
+      logout: userStore.logout,
+      refreshAccessToken: userStore.refreshAccessToken,
+      redirectToGoogle: userStore.redirectToGoogle,
+      authFetch: userStore.authFetch,
     }),
-    [role, isReady],
+    [snapshot],
   );
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
