@@ -8,12 +8,26 @@ import {
   getMatchesForListing,
   sendContactRequest,
 } from '@/lib/repositories/landlordRepository';
-import { TenantRequest } from '@/types/tenant';
+import { TenantRequestDetail } from '@/types/tenant';
 
 interface MatchItem {
-  tenant: TenantRequest;
+  tenant: TenantRequestDetail;
   matchScore: number;
 }
+
+const RESIDENCE_LABEL: Record<string, string> = {
+  apartment: '아파트',
+  officetel: '오피스텔',
+  villa: '빌라',
+  house: '단독주택',
+  commercial: '상가',
+};
+
+const DEAL_LABEL: Record<string, string> = {
+  jeonse: '전세',
+  sale: '매매',
+  monthly: '월세',
+};
 
 export default function LandlordListingMatchesPage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -25,6 +39,7 @@ export default function LandlordListingMatchesPage({ params }: { params: { id: s
   }, [params.id]);
 
   const handleContact = async (tenantId: string) => {
+    if (!tenantId) return;
     await sendContactRequest(tenantId, params.id, 'landlord-1');
     setMessage('컨택 요청을 보냈습니다.');
   };
@@ -46,12 +61,13 @@ export default function LandlordListingMatchesPage({ params }: { params: { id: s
             actions={<span className="text-sm text-gray-600">매칭 점수 {matchScore}</span>}
           >
             <p className="text-sm text-gray-700">
-              지역: {tenant.region} / {tenant.listingType} / {tenant.contractType}
+              지역: {tenant.preferredArea} / {RESIDENCE_LABEL[tenant.residenceType] ?? tenant.residenceType} /{' '}
+              {DEAL_LABEL[tenant.dealType] ?? tenant.dealType}
             </p>
             <p className="text-sm text-gray-700">
-              예산 {tenant.budget.toLocaleString()} 만원 · 면적 {tenant.areaMin} m² 이상
+              예산 ({tenant.dealType === 'sale' ? '매매가' : '보증금'}) {tenant.budget.toLocaleString()} 만원 · 면적 {tenant.area} m² 이상
             </p>
-            <Button className="mt-3" onClick={() => handleContact(tenant.tenantId)}>
+            <Button className="mt-3" onClick={() => handleContact(tenant.tenantId ?? '')}>
               컨텍하기
             </Button>
           </Card>

@@ -59,12 +59,12 @@ export const userStore = {
     const token = await requestAccessTokenWithRefresh();
     if (!token) {
       // refresh 실패 시 세션을 초기화해 401 반복 호출을 방지
-      setState({ accessToken: null, role: null, isRefreshing: false });
+      setState({ accessToken: null, role: null, isRefreshing: false, isReady: true });
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("role");
       }
     } else {
-      setState({ accessToken: token, isRefreshing: false });
+      setState({ accessToken: token, isRefreshing: false, isReady: true });
     }
     return token;
   },

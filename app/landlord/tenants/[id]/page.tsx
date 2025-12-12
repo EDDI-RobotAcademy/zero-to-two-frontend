@@ -6,11 +6,25 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { getTenantRequestById } from '@/lib/repositories/tenantRepository';
 import { sendContactRequest } from '@/lib/repositories/landlordRepository';
-import { TenantRequest } from '@/types/tenant';
+import { TenantRequestDetail } from '@/types/tenant';
+
+const RESIDENCE_LABEL: Record<string, string> = {
+  apartment: '아파트',
+  officetel: '오피스텔',
+  villa: '빌라',
+  house: '단독주택',
+  commercial: '상가',
+};
+
+const DEAL_LABEL: Record<string, string> = {
+  jeonse: '전세',
+  sale: '매매',
+  monthly: '월세',
+};
 
 export default function LandlordTenantDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [tenantRequest, setTenantRequest] = useState<TenantRequest | null>(null);
+  const [tenantRequest, setTenantRequest] = useState<TenantRequestDetail | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -18,7 +32,7 @@ export default function LandlordTenantDetailPage({ params }: { params: { id: str
   }, [params.id]);
 
   const handleContact = async () => {
-    if (!tenantRequest) return;
+    if (!tenantRequest?.tenantId) return;
     await sendContactRequest(tenantRequest.tenantId, 'listing-1', 'landlord-1');
     setMessage('컨택 요청을 보냈습니다.');
   };
@@ -47,38 +61,40 @@ export default function LandlordTenantDetailPage({ params }: { params: { id: str
         <dl className="grid grid-cols-2 gap-3 text-sm text-gray-700">
           <div>
             <dt className="font-semibold">지역</dt>
-            <dd>{tenantRequest.region}</dd>
+            <dd>{tenantRequest.preferredArea}</dd>
           </div>
           <div>
             <dt className="font-semibold">매물 종류</dt>
-            <dd>{tenantRequest.listingType}</dd>
+            <dd>{RESIDENCE_LABEL[tenantRequest.residenceType] ?? tenantRequest.residenceType}</dd>
           </div>
           <div>
             <dt className="font-semibold">계약 형태</dt>
-            <dd>{tenantRequest.contractType}</dd>
+            <dd>{DEAL_LABEL[tenantRequest.dealType] ?? tenantRequest.dealType}</dd>
           </div>
           <div>
-            <dt className="font-semibold">예산</dt>
+            <dt className="font-semibold">
+              예산 ({tenantRequest.dealType === 'sale' ? '매매가' : '보증금'})
+            </dt>
             <dd>{tenantRequest.budget.toLocaleString()} 만원</dd>
           </div>
           <div>
             <dt className="font-semibold">면적</dt>
-            <dd>{tenantRequest.areaMin} m² 이상</dd>
+            <dd>{tenantRequest.area} m² 이상</dd>
           </div>
           <div>
             <dt className="font-semibold">방/욕실</dt>
             <dd>
-              {tenantRequest.rooms} / {tenantRequest.bathrooms}
+              {tenantRequest.roomCount} / {tenantRequest.bathroomCount}
             </dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="font-semibold">입주 가능 시기</dt>
-            <dd>{tenantRequest.moveInDate}</dd>
-          </div>
-          <div className="col-span-2">
-            <dt className="font-semibold">기타 요청사항</dt>
-            <dd>{tenantRequest.notes ?? '-'}</dd>
-          </div>
+        </div>
+        <div className="col-span-2">
+          <dt className="font-semibold">입주 가능 시기</dt>
+          <dd>-</dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="font-semibold">기타 요청사항</dt>
+          <dd>-</dd>
+        </div>
         </dl>
         <Button className="mt-4" onClick={handleContact}>
           컨텍하기

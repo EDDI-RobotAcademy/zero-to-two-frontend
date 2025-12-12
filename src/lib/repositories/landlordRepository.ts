@@ -1,6 +1,6 @@
 import { Listing } from '@/types/listing';
 import { ContactRequest } from '@/types/contact';
-import { TenantRequest } from '@/types/tenant';
+import { TenantRequestDetail } from '@/types/tenant';
 import {
   createListing,
   getListingById,
@@ -25,8 +25,8 @@ export async function createLandlordListing(
 
 export async function getMatchesForListing(
   listingId: string,
-): Promise<{ tenant: TenantRequest; matchScore: number }[]> {
-  const tenantRequest = await getTenantRequestById('tenant-1');
+): Promise<{ tenant: TenantRequestDetail; matchScore: number }[]> {
+  const tenantRequest = await getTenantRequestById(1);
   if (!tenantRequest) return [];
   return [{ tenant: tenantRequest, matchScore: 92 }];
 }
