@@ -41,6 +41,7 @@ function setState(patch: Partial<State>) {
   listeners.forEach((l) => l());
 }
 
+// @ts-ignore
 export const userStore = {
   getState: () => state,
   subscribe(fn: Listener) {
@@ -74,7 +75,7 @@ export const userStore = {
     }
     await logoutFromServer();
   },
-  async authFetchWithRefresh(pathOrUrl: string, init: RequestInit = {}) {
+  async authFetchWithRefresh(pathOrUrl: string, init: RequestInit = {} , accessToken?: string | null) {
     const makeRequest = (token?: string | null) => authFetch(pathOrUrl, init, token);
 
     // 1차 시도: 현재 access token 사용
